@@ -84,17 +84,21 @@ body {
   background: var(--bg-base);
   color: var(--text-primary);
   line-height: 1.6;
-  overflow: hidden;
-  height: 100vh;
-  width: 100vw;
+  /* overflow toggled via JS: landing=auto, dashboard=hidden */
 }
 
 #root {
-  height: 100vh;
-  width: 100vw;
   display: flex;
+  flex-direction: column;
+}
+
+/* Dashboard shell restores full-height fixed layout */
+.app-shell {
   overflow: hidden;
 }
+
+/* Landing page resets root stacking */
+.landing-root ~ * { overflow: hidden; }
 
 /* ── Typography ── */
 h1, h2, h3, h4, h5 {
@@ -1448,3 +1452,575 @@ a { color: var(--text-brand); text-decoration: none; }
 /* Leaflet dark override */
 .leaflet-tile { filter: brightness(0.6) saturate(0.8) hue-rotate(10deg); }
 .leaflet-control-attribution { display: none !important; }
+
+/* ══════════════════════════════════════════════
+   DATA TABLE (generic reusable)
+   ══════════════════════════════════════════════ */
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.data-table th {
+  text-align: left;
+  padding: 10px 16px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  background: var(--bg-elevated);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.data-table td {
+  padding: 11px 16px;
+  font-size: 0.83rem;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+}
+
+.data-table tr:last-child td { border-bottom: none; }
+
+.data-table tr:hover td {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.data-table td:first-child {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* ══════════════════════════════════════════════
+   LANDING PAGE — Entry Experience
+   ══════════════════════════════════════════════ */
+
+.landing-root {
+  background: #090e1a;
+  min-height: 100vh;
+  width: 100%;
+}
+
+/* ── Hero Section ─────────────────────────── */
+
+.landing-hero {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #080c14;
+}
+
+.thermal-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  z-index: 1;
+}
+
+/* ── Real Interactive Leaflet Hero Map Wrapper ───────── */
+.hero-leaflet-wrapper {
+  position: absolute;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 5;
+}
+
+.hero-leaflet-wrapper .leaflet-container {
+  background: #080c14 !important;
+  font-family: 'Inter', sans-serif;
+}
+
+/* Custom Leaflet City Marker DivIcon */
+.leaflet-city-div-icon {
+  background: none !important;
+  border: none !important;
+}
+
+.city-marker-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  user-select: none;
+  cursor: pointer;
+  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.city-marker-box:hover {
+  transform: scale(1.12);
+  z-index: 1000;
+}
+
+.city-marker-box .city-marker-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(11, 16, 26, 0.82);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 99px;
+  padding: 3px 9px;
+  margin-bottom: 4px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+  white-space: nowrap;
+}
+
+.city-marker-box:hover .city-marker-label {
+  background: rgba(15, 23, 38, 0.95);
+  border-color: rgba(249, 115, 22, 0.45);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.7), 0 0 16px rgba(249, 115, 22, 0.25);
+}
+
+.city-marker-box .city-point {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, 0.85);
+  transition: all 0.25s ease;
+}
+
+.city-marker-box:hover .city-point {
+  width: 12px;
+  height: 12px;
+  border-color: #ffffff;
+}
+
+/* Custom Popup Card for Leaflet */
+.custom-city-leaflet-popup .leaflet-popup-content-wrapper {
+  background: rgba(13, 20, 32, 0.94);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(249, 115, 22, 0.35);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.75), 0 0 20px rgba(249, 115, 22, 0.18);
+  padding: 4px;
+}
+
+.custom-city-leaflet-popup .leaflet-popup-tip {
+  background: rgba(13, 20, 32, 0.94);
+  border: 1px solid rgba(249, 115, 22, 0.35);
+}
+
+.city-popup-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 6px 8px;
+  min-width: 180px;
+}
+
+.city-popup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.city-popup-name {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.city-popup-badge {
+  font-size: 0.58rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 2px 6px;
+  border-radius: 99px;
+  border: 1px solid;
+}
+
+.city-popup-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.city-popup-temp {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.3rem;
+  font-weight: 800;
+}
+
+.city-popup-aqi {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.city-popup-desc {
+  font-size: 0.68rem;
+  color: rgba(255, 255, 255, 0.65);
+  line-height: 1.35;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 5px;
+}
+
+/* ── Hero Branding Overlay ───────────────────────────── */
+
+.hero-branding {
+  position: absolute;
+  top: 32%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 500;
+  text-align: center;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 90%;
+  max-width: 900px;
+}
+
+.hero-logo-accent {
+  font-family: 'Outfit', sans-serif;
+  font-size: clamp(2.4rem, 5.8vw, 4.8rem);
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  background: linear-gradient(90deg, #f97316 10%, #fbbf24 90%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow:
+    0 0 80px rgba(249, 115, 22, 0.3),
+    0 0 200px rgba(249, 115, 22, 0.15);
+  line-height: 1;
+}
+
+.hero-subtitle {
+  font-size: clamp(0.62rem, 1.1vw, 0.78rem);
+  font-weight: 600;
+  letter-spacing: 0.28em;
+  color: rgba(255, 255, 255, 0.75);
+  text-transform: uppercase;
+}
+
+.fortyguard-accent {
+  color: #f97316;
+  font-weight: 700;
+}
+
+/* ── "WHAT YOU GET" Architecture Section ─────────────── */
+
+.what-you-get {
+  background: #080c14;
+  padding: 90px 32px 110px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  border-top: 1px solid rgba(249, 115, 22, 0.12);
+  width: 100%;
+}
+
+.arch-header-wrap {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.arch-section-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: clamp(1.8rem, 3.5vw, 3.0rem);
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: #ffffff;
+  text-align: center;
+  margin-bottom: 6px;
+  opacity: 0;
+  transform: translateY(22px);
+  transition: opacity 0.85s ease, transform 0.85s ease;
+}
+
+.arch-section-sub {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  text-align: center;
+  opacity: 0;
+  transition: opacity 0.85s ease 0.25s;
+}
+
+.arch-section-title.lp-visible,
+.arch-section-sub.lp-visible  { opacity: 1; transform: translateY(0); }
+
+/* Architecture Connectors System */
+.architecture-connectors {
+  width: min(1200px, calc(100% - 64px));
+  margin: 0 auto 36px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  opacity: 0;
+  transition: opacity 0.7s ease 0.4s;
+}
+.architecture-connectors.lp-visible { opacity: 1; }
+
+.connector-vertical-stem {
+  width: 2px;
+  height: 28px;
+  background: linear-gradient(to bottom, rgba(249, 115, 22, 0.8), rgba(249, 115, 22, 0.35));
+}
+
+.horizontal-line-wrap {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.horizontal-line {
+  width: 80%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(249, 115, 22, 0.4) 20%, rgba(249, 115, 22, 0.4) 80%, transparent);
+}
+
+.branch-lines {
+  width: 80%;
+  display: flex;
+  justify-content: space-around;
+}
+
+.branch-line {
+  width: 2px;
+  height: 18px;
+  background: rgba(249, 115, 22, 0.3);
+}
+
+/* Horizontal 5-Column Grid Layout */
+.architecture-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 32px;
+  width: min(1200px, calc(100% - 64px));
+  margin: 0 auto;
+  align-items: start;
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 0.7s ease 0.5s, transform 0.7s ease 0.5s;
+}
+
+.architecture-grid.lp-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.architecture-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.arch-cat-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  padding: 14px 16px;
+  border-radius: var(--radius-lg);
+  background: rgba(249, 115, 22, 0.07);
+  border: 1px solid rgba(249, 115, 22, 0.20);
+  margin-bottom: 20px;
+  width: 100%;
+  max-width: 170px;
+  text-align: center;
+  transition: all 0.28s ease;
+}
+
+.arch-cat-node:hover {
+  background: rgba(249, 115, 22, 0.14);
+  border-color: rgba(249, 115, 22, 0.40);
+  transform: translateY(-2px);
+}
+
+.arch-cat-label {
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+  line-height: 1.3;
+}
+
+.arch-features-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+/* Feature Flip Cards */
+.flip-wrap {
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+.flip-wrap.lp-visible { opacity: 1; transform: translateY(0); }
+
+.flip-card {
+  width: 66px;
+  height: 66px;
+  perspective: 800px;
+  cursor: pointer;
+}
+
+.flip-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 380ms cubic-bezier(0.33, 1, 0.68, 1);
+}
+
+.flip-card:hover .flip-inner {
+  transform: rotateY(180deg);
+}
+
+.flip-front,
+.flip-back {
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.flip-front {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+  transition: border-color 0.25s ease, color 0.25s ease;
+}
+
+.flip-card:hover .flip-front {
+  border-color: rgba(249, 115, 22, 0.4);
+  color: var(--brand-primary);
+}
+
+.flip-back {
+  background: rgba(249, 115, 22, 0.12);
+  border: 1px solid rgba(249, 115, 22, 0.4);
+  transform: rotateY(180deg);
+  padding: 6px;
+}
+
+.flip-back-text {
+  font-size: 0.57rem;
+  font-weight: 700;
+  text-align: center;
+  color: var(--brand-primary);
+  letter-spacing: 0.04em;
+  line-height: 1.35;
+  text-transform: uppercase;
+}
+
+/* PLAN OPERATIONS Column Specific CHECK IN Button Placement */
+.plan-operations-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.plan-operations-checkin {
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 0.6s ease 0.3s, transform 0.6s ease 0.3s;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+.plan-operations-checkin.lp-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.check-in-button {
+  margin-top: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #f97316, #dc6b0a);
+  border: none;
+  border-radius: 60px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  color: white;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.28s ease, box-shadow 0.28s ease;
+  box-shadow:
+    0 0 25px rgba(249, 115, 22, 0.30),
+    0 4px 16px rgba(0, 0, 0, 0.5);
+  white-space: nowrap;
+}
+
+.check-in-button::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.18), transparent 60%);
+  opacity: 0;
+  transition: opacity 0.28s ease;
+}
+
+.check-in-button:hover {
+  transform: translateY(-2px) scale(1.04);
+  box-shadow:
+    0 0 45px rgba(249, 115, 22, 0.50),
+    0 6px 22px rgba(0, 0, 0, 0.65);
+}
+
+.check-in-button:hover::after { opacity: 1; }
+
+.check-in-button:active {
+  transform: translateY(-1px) scale(1.01);
+}
+
+/* Responsive Grid Breakpoints */
+@media (min-width: 1100px) {
+  .architecture-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1099px) and (min-width: 700px) {
+  .architecture-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .architecture-connectors {
+    display: none;
+  }
+}
+
+@media (max-width: 699px) {
+  .architecture-grid {
+    grid-template-columns: 1fr;
+  }
+  .architecture-connectors {
+    display: none;
+  }
+}
+
+

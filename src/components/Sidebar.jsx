@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
   MapPinned, Route, GitCompareArrows, ChartNoAxesCombined, MapPin,
-  ThermometerSun, Clock3, Map, Trees, SunMedium, Building2,
-  CalendarClock, CalendarRange,
+  ThermometerSun, Clock3, Map, Trees, SunMedium, Building2, Wind,
+  CalendarClock, CalendarRange, UtensilsCrossed,
+  BriefcaseBusiness, CalendarDays, ChartSpline, Warehouse,
   ShieldCheck, HardHat, Refrigerator, Utensils,
   Siren, CloudSun, TriangleAlert,
   ChevronRight, ChevronsLeft, ChevronsRight, Flame
@@ -15,10 +16,11 @@ const NAV_GROUPS = [
     label: 'Find a Location',
     Icon: MapPinned,
     items: [
-      { label: 'Location Planner', Icon: Route, path: '/location-planner' },
-      { label: 'Location Comparison', Icon: GitCompareArrows, path: '/location-comparison' },
-      { label: 'Business Potential', Icon: ChartNoAxesCombined, path: '/business-potential' },
-      { label: 'Nearby Activity', Icon: MapPin, path: '/nearby-activity' },
+      { label: 'Location Planner',             Icon: Route,               path: '/dashboard/location-planner' },
+      { label: 'Location Comparison',          Icon: GitCompareArrows,    path: '/dashboard/location-comparison' },
+      { label: 'Nearby Activity Explorer',     Icon: MapPin,              path: '/dashboard/nearby-activity' },
+      { label: 'Business Potential Insights',  Icon: ChartNoAxesCombined, path: '/dashboard/business-potential' },
+      { label: 'Shade Finder',                 Icon: Trees,               path: '/dashboard/shade-finder' },
     ],
   },
   {
@@ -26,11 +28,12 @@ const NAV_GROUPS = [
     label: 'Heat Conditions',
     Icon: ThermometerSun,
     items: [
-      { label: '12-Hour Heat Outlook', Icon: Clock3, path: '/heat-outlook' },
-      { label: 'Local Heat Map', Icon: Map, path: '/local-heat-map' },
-      { label: 'Shade Finder', Icon: Trees, path: '/shade-finder' },
-      { label: 'Solar Exposure Map', Icon: SunMedium, path: '/solar-exposure' },
-      { label: 'Urban Heat Insights', Icon: Building2, path: '/urban-heat' },
+      { label: '12-Hour Heat Outlook', Icon: Clock3,    path: '/dashboard/heat-outlook' },
+      { label: 'Local Heat Map',       Icon: Map,       path: '/dashboard/local-heat-map' },
+      { label: 'Shade Finder',         Icon: Trees,     path: '/dashboard/shade-finder' },
+      { label: 'Solar Exposure Map',   Icon: SunMedium, path: '/dashboard/solar-exposure' },
+      { label: 'Air Quality View',     Icon: Wind,      path: '/dashboard/air-quality' },
+      { label: 'Urban Heat Insights',  Icon: Building2, path: '/dashboard/urban-heat' },
     ],
   },
   {
@@ -38,7 +41,18 @@ const NAV_GROUPS = [
     label: 'Plan Operations',
     Icon: CalendarClock,
     items: [
-      { label: 'Operating Window Planner', Icon: CalendarRange, path: '/operating-window' },
+      { label: 'Operating Window Planner', Icon: CalendarRange,   path: '/dashboard/operating-window' },
+      { label: 'Menu Timing Planner',      Icon: UtensilsCrossed, path: '/dashboard/menu-timing' },
+    ],
+  },
+  {
+    id: 'business-planning',
+    label: 'Business Planning',
+    Icon: BriefcaseBusiness,
+    items: [
+      { label: 'Event Opportunity Planner',     Icon: CalendarDays, path: '/dashboard/event-opportunity' },
+      { label: 'Location Performance Insights', Icon: ChartSpline,  path: '/dashboard/location-performance' },
+      { label: 'Site Planning',                 Icon: Warehouse,    path: '/dashboard/site-planning' },
     ],
   },
   {
@@ -46,9 +60,9 @@ const NAV_GROUPS = [
     label: 'Safety',
     Icon: ShieldCheck,
     items: [
-      { label: 'Crew Heat Safety', Icon: HardHat, path: '/crew-safety' },
-      { label: 'Cold Storage Protection', Icon: Refrigerator, path: '/cold-storage' },
-      { label: 'Food Safety Guard', Icon: Utensils, path: '/food-safety' },
+      { label: 'Crew Heat Safety',        Icon: HardHat,      path: '/dashboard/crew-safety' },
+      { label: 'Cold Storage Protection', Icon: Refrigerator, path: '/dashboard/cold-storage' },
+      { label: 'Food Safety Guard',       Icon: Utensils,     path: '/dashboard/food-safety' },
     ],
   },
   {
@@ -56,8 +70,8 @@ const NAV_GROUPS = [
     label: 'Alerts & Risks',
     Icon: Siren,
     items: [
-      { label: 'Environmental Risk Center', Icon: CloudSun, path: '/environmental-risk' },
-      { label: 'Critical Condition Alerts', Icon: TriangleAlert, path: '/critical-alerts' },
+      { label: 'Environmental Risk Center',  Icon: CloudSun,      path: '/dashboard/environmental-risk' },
+      { label: 'Critical Condition Alerts',  Icon: TriangleAlert, path: '/dashboard/critical-alerts' },
     ],
   },
 ];
