@@ -4,7 +4,9 @@
  * All requests go through /api (proxied by Vite → http://localhost:8000).
  */
 
-const BASE = '/api';
+const BASE = import.meta.env.VITE_API_BASE_URL
+  ? import.meta.env.VITE_API_BASE_URL.replace(/\/$/, '')
+  : '/api';
 
 async function request(method, path, body = undefined) {
   const opts = {
