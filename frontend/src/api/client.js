@@ -6,7 +6,9 @@
 
 const BASE = import.meta.env.VITE_API_BASE_URL
   ? import.meta.env.VITE_API_BASE_URL.replace(/\/$/, '')
-  : '/api';
+  : (import.meta.env.PROD
+      ? 'https://thermosarva-backend.onrender.com/api'
+      : '/api');
 
 async function request(method, path, body = undefined) {
   const opts = {
