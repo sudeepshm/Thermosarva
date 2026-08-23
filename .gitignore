@@ -14,6 +14,11 @@ dist-ssr
 .env
 .env.*
 !.env.example
+.pytest_cache/
+CACHEDIR.TAG
+backend/CACHEDIR.TAG
+backend/v/
+backend/.pytest_cache/
 
 # Editor directories and files
 .vscode/*
