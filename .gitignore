@@ -8,12 +8,23 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
+**/node_modules
 dist
+**/dist
 dist-ssr
 *.local
 .env
 .env.*
 !.env.example
+**/.env
+**/.env.*
+!**/.env.example
+.venv
+**/.venv
+__pycache__
+**/__pycache__
+*.db
+**/*.db
 .pytest_cache/
 CACHEDIR.TAG
 backend/CACHEDIR.TAG
