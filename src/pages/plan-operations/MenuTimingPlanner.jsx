@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { UtensilsCrossed, CheckCircle, AlertCircle, XCircle, Star } from 'lucide-react';
-import { menuTimingData } from '../../data/mockData';
+import { useApp } from '../../context/AppContext';
+import { DataGuard } from '../../components/PageLoader';
 
 const RISK_CONFIG = {
   safe:     { color: 'var(--status-ok)',       bg: 'rgba(34,197,94,0.12)',  border: 'rgba(34,197,94,0.25)',  label: 'Safe',     Icon: CheckCircle },
@@ -17,10 +18,42 @@ const WINDOW_CONFIG = {
 
 export default function MenuTimingPlanner() {
   const [activeWindow, setActiveWindow] = useState('morning');
-  const { windows, topRecommendations } = menuTimingData;
+  const { dashboardData, loading, error } = useApp();
+  const hi = dashboardData?.thermal?.current?.heat_index_c ?? dashboardData?.thermal?.current?.temperature_c ?? 35;
+
+  // Generate menu windows from real thermal data
+  const windows = [
+    { id: 'morning', label: 'Morning Window', time: '7:30 – 11:00 AM', heatIndex: `${Math.round(hi * 0.8)}°C`, status: 'recommended',
+      menuItems: [
+        { name: 'Hot Coffee & Tea', risk: 'safe', note: 'Ideal in morning temperatures' },
+        { name: 'Fresh Pastries', risk: 'safe', note: 'Best served before 10 AM' },
+        { name: 'Ice Cream', risk: 'caution', note: 'Monitor display temps closely' },
+        { name: 'Salads & Cold Wraps', risk: 'safe', note: 'Safe in morning conditions' },
+      ]},
+    { id: 'midday', label: 'Peak Heat', time: '11:30 AM – 4:30 PM', heatIndex: `${Math.round(hi)}°C`, status: 'avoid',
+      menuItems: [
+        { name: 'Hot Coffee & Tea', risk: 'safe', note: 'Reduced demand but safe' },
+        { name: 'Ice Cream', risk: 'critical', note: 'Melting risk very high — avoid' },
+        { name: 'Salads & Cold Wraps', risk: 'critical', note: 'Danger zone — rapid spoilage risk' },
+        { name: 'Smoothies & Cold Drinks', risk: 'caution', note: 'High demand but monitor temps' },
+      ]},
+    { id: 'evening', label: 'Evening Window', time: '5:00 – 7:30 PM', heatIndex: `${Math.round(hi * 0.85)}°C`, status: 'secondary',
+      menuItems: [
+        { name: 'Hot Items', risk: 'safe', note: 'Temperatures allow safe service' },
+        { name: 'Ice Cream', risk: 'caution', note: 'Better but still monitor closely' },
+        { name: 'Salads & Cold Wraps', risk: 'safe', note: 'Cooling conditions favorable' },
+        { name: 'Grilled Items', risk: 'safe', note: 'Peak evening demand' },
+      ]},
+  ];
+  const topRecommendations = [
+    { item: 'Cold Beverages', reason: 'Highest demand during heat — safe across all windows', window: 'All Day' },
+    { item: 'Hot Items (Morning)', reason: 'Best margins before 11 AM when heat is manageable', window: 'Morning' },
+    { item: 'Grilled Items (Evening)', reason: 'Peak footfall + safe temps for outdoor cooking', window: 'Evening' },
+  ];
   const currentWindow = windows.find(w => w.id === activeWindow);
 
   return (
+    <DataGuard loading={loading} error={error} data={dashboardData}>
     <div className="page-scroll">
       {/* Header */}
       <div className="page-header">
@@ -212,5 +245,6 @@ export default function MenuTimingPlanner() {
         </div>
       </div>
     </div>
+    </DataGuard>
   );
 }

@@ -1,6 +1,7 @@
 import { MapPin } from 'lucide-react';
-import { nearbyActivityData } from '../../data/mockData';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { useApp } from '../../context/AppContext';
+import { DataGuard } from '../../components/PageLoader';
+import { MapContainer, TileLayer, Marker, Popup, Circle } from 'react-leaflet';
 import L from 'leaflet';
 
 delete L.Icon.Default.prototype._getIconUrl;
@@ -10,123 +11,138 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 });
 
-const DEMAND_WIDTH = { 'Very High': '92%', High: '70%', Medium: '50%', Low: '30%' };
-
 export default function NearbyActivity() {
+  const { dashboardData, loading, error, location } = useApp();
+  const nearbyRaw = dashboardData?.location_context?.nearby;
+
+  // Backend returns POIs from OpenStreetMap
+  const pois = nearbyRaw?.pois ?? nearbyRaw?.results ?? [];
+  const categories = nearbyRaw?.categories ?? {};
+  const totalPois = Array.isArray(pois) ? pois.length : 0;
+
+  // Category summary
+  const catSummary = Object.entries(categories).map(([cat, items]) => ({
+    category: cat,
+    count: Array.isArray(items) ? items.length : 0,
+  })).sort((a, b) => b.count - a.count);
+
+  const dominantType = catSummary[0]?.category ?? 'N/A';
+
   return (
-    <div className="page-scroll">
-      <div className="page-header">
-        <div className="page-header-row">
-          <div className="page-icon-wrap" style={{ background: 'rgba(59,130,246,0.12)' }}>
-            <MapPin size={24} color="var(--status-info)" />
+    <DataGuard loading={loading} error={error} data={dashboardData}>
+      <div className="page-scroll">
+        <div className="page-header">
+          <div className="page-header-row">
+            <div className="page-icon-wrap" style={{ background: 'rgba(59,130,246,0.12)' }}>
+              <MapPin size={24} color="var(--status-info)" />
+            </div>
+            <div>
+              <h1 className="page-title">Nearby Activity Explorer</h1>
+              <p className="page-desc">
+                Points of interest from OpenStreetMap around {location.city || 'your selected location'}.
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="page-title">Nearby Activity Explorer</h1>
-            <p className="page-desc">
-              Points of interest, commercial zones, colleges, transit nodes, and tourist locations around your selected candidate.
-            </p>
+          <div className="dependency-trail">
+            <span className="dep-step">Location Planner</span>
+            <span className="dep-arrow">→</span>
+            <span className="dep-step">Selected Location</span>
+            <span className="dep-arrow">→</span>
+            <span className="dep-step current">Nearby Activity Explorer</span>
           </div>
         </div>
-        <div className="dependency-trail">
-          <span className="dep-step">Location Planner</span>
-          <span className="dep-arrow">→</span>
-          <span className="dep-step">Selected Location</span>
-          <span className="dep-arrow">→</span>
-          <span className="dep-step current">Nearby Activity Explorer</span>
-        </div>
-      </div>
 
-      <div className="metric-grid">
-        <div className="metric-card">
-          <span className="metric-label">Total POIs</span>
-          <span className="metric-value">18</span>
-          <span className="metric-sub">Within 1km radius</span>
-        </div>
-        <div className="metric-card">
-          <span className="metric-label">Nearest Demand</span>
-          <span className="metric-value" style={{ fontSize: '1.2rem' }}>120m</span>
-          <span className="metric-sub">IT Park Alpha</span>
-        </div>
-        <div className="metric-card">
-          <span className="metric-label">High-Demand POIs</span>
-          <span className="metric-value" style={{ color: 'var(--brand-primary)' }}>4</span>
-          <span className="metric-sub">Very High or High demand</span>
-        </div>
-        <div className="metric-card">
-          <span className="metric-label">Dominant Type</span>
-          <span className="metric-value" style={{ fontSize: '1.1rem' }}>Office</span>
-          <span className="metric-sub">3,200 workers estimated</span>
-        </div>
-      </div>
-
-      <div className="two-col">
-        {/* POI Table */}
-        <div className="panel">
-          <div className="panel-header">
-            <span className="panel-title"><MapPin size={14} className="panel-title-icon" /> Nearby Points of Interest</span>
+        <div className="metric-grid">
+          <div className="metric-card">
+            <span className="metric-label">Total POIs</span>
+            <span className="metric-value">{totalPois}</span>
+            <span className="metric-sub">Within search radius</span>
           </div>
-          <div className="panel-body no-pad">
-            <table className="comparison-table">
-              <thead>
-                <tr>
-                  <th>Location</th>
-                  <th>Type</th>
-                  <th>Distance</th>
-                  <th>Demand</th>
-                </tr>
-              </thead>
-              <tbody>
-                {nearbyActivityData.map(poi => (
-                  <tr key={poi.name}>
-                    <td>{poi.name}</td>
-                    <td>
-                      <span className={`poi-type-badge poi-badge-${poi.type}`}>{poi.type}</span>
-                    </td>
-                    <td style={{ color: 'var(--text-muted)' }}>{poi.distance}</td>
-                    <td>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <div className="demand-bar">
-                          <div className="demand-fill" style={{ width: DEMAND_WIDTH[poi.demand] || '50%' }} />
-                        </div>
-                        <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{poi.demand}</span>
+          <div className="metric-card">
+            <span className="metric-label">Categories</span>
+            <span className="metric-value">{catSummary.length}</span>
+            <span className="metric-sub">Types of places</span>
+          </div>
+          <div className="metric-card">
+            <span className="metric-label">Dominant Type</span>
+            <span className="metric-value" style={{ fontSize: '1rem' }}>{dominantType}</span>
+            <span className="metric-sub">{catSummary[0]?.count ?? 0} locations</span>
+          </div>
+          <div className="metric-card">
+            <span className="metric-label">Source</span>
+            <span className="metric-value" style={{ fontSize: '0.85rem' }}>OpenStreetMap</span>
+            <span className="metric-sub">Overpass API</span>
+          </div>
+        </div>
+
+        <div className="two-col">
+          {/* POI Categories List */}
+          <div className="panel">
+            <div className="panel-header">
+              <span className="panel-title"><MapPin size={14} className="panel-title-icon" /> Nearby Points of Interest</span>
+            </div>
+            <div className="panel-body">
+              {totalPois > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {catSummary.map(cat => (
+                    <div key={cat.category} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', borderRadius: 'var(--radius-md)', background: 'var(--bg-elevated)', border: '1px solid var(--border-subtle)' }}>
+                      <MapPin size={14} style={{ color: 'var(--brand-primary)', flexShrink: 0 }} />
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: 600, fontSize: '0.88rem', color: 'var(--text-primary)', textTransform: 'capitalize' }}>{cat.category.replace(/_/g, ' ')}</div>
                       </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Mini Map */}
-        <div>
-          <p className="section-title">POI Map</p>
-          <div className="map-wrapper" style={{ height: 340 }}>
-            <MapContainer center={[12.9698, 77.7499]} zoom={15} style={{ height: '100%', width: '100%' }}>
-              <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-              {nearbyActivityData.map(poi => (
-                <Marker key={poi.name} position={[poi.lat, poi.lng]}>
-                  <Popup>
-                    <div style={{ color: '#111', fontFamily: 'Inter, sans-serif' }}>
-                      <strong>{poi.name}</strong><br />
-                      Type: {poi.type}<br />
-                      Distance: {poi.distance}<br />
-                      Demand: {poi.demand}
+                      <span style={{ fontWeight: 700, color: 'var(--brand-primary)' }}>{cat.count}</span>
                     </div>
-                  </Popup>
-                </Marker>
-              ))}
-            </MapContainer>
+                  ))}
+                </div>
+              ) : (
+                <div style={{ padding: 20, textAlign: 'center', color: 'var(--text-muted)' }}>
+                  {nearbyRaw ? 'No POIs found nearby.' : 'POI data loading…'}
+                </div>
+              )}
+
+              {/* Individual POIs if available */}
+              {pois.length > 0 && (
+                <>
+                  <div className="divider" />
+                  <p className="section-title">Individual Locations ({Math.min(pois.length, 20)} shown)</p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 300, overflowY: 'auto' }}>
+                    {pois.slice(0, 20).map((poi, i) => (
+                      <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 'var(--radius-sm)', background: i % 2 === 0 ? 'transparent' : 'var(--bg-card)', fontSize: '0.82rem' }}>
+                        <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--brand-primary)', flexShrink: 0 }} />
+                        <span style={{ flex: 1, color: 'var(--text-secondary)' }}>{poi.name || poi.tags?.name || `POI #${i + 1}`}</span>
+                        <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'capitalize' }}>{poi.category || poi.type || ''}</span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
           </div>
 
-          {/* Type legend */}
-          <div style={{ marginTop: 12, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            {['Office', 'College', 'Market', 'Transit', 'Commercial'].map(t => (
-              <span key={t} className={`poi-type-badge poi-badge-${t}`}>{t}</span>
-            ))}
+          {/* Map */}
+          <div>
+            <p className="section-title">POI Map — {location.city || 'Location'}</p>
+            <div className="map-wrapper" style={{ height: 400 }}>
+              <MapContainer center={[location.lat, location.lon]} zoom={15} style={{ height: '100%', width: '100%' }}>
+                <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                {/* Center marker */}
+                <Circle center={[location.lat, location.lon]} radius={50} pathOptions={{ color: '#f97316', fillColor: '#f97316', fillOpacity: 0.6 }} />
+                {/* POI markers */}
+                {pois.filter(p => p.lat && p.lon).slice(0, 30).map((poi, i) => (
+                  <Marker key={i} position={[poi.lat, poi.lon]}>
+                    <Popup>
+                      <div style={{ color: '#111', fontFamily: 'Inter, sans-serif' }}>
+                        <strong>{poi.name || `POI #${i + 1}`}</strong><br />
+                        {poi.category || poi.type || ''}
+                      </div>
+                    </Popup>
+                  </Marker>
+                ))}
+              </MapContainer>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </DataGuard>
   );
 }

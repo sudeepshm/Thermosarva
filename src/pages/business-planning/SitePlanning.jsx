@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Warehouse, CheckCircle, XCircle, Zap, Droplets, MapPin, Trees, Users } from 'lucide-react';
-import { sitePlanningData } from '../../data/mockData';
+import { useApp } from '../../context/AppContext';
+import { DataGuard } from '../../components/PageLoader';
 
 const STATUS_CONFIG = {
   best:        { color: 'var(--brand-primary)',    bg: 'rgba(249,115,22,0.12)', border: 'rgba(249,115,22,0.3)', label: 'Best Choice' },
@@ -29,8 +30,45 @@ function ShadeBar({ score }) {
 
 export default function SitePlanning() {
   const [selected, setSelected] = useState(null);
+  const { dashboardData, loading, error, location } = useApp();
+  const shade = dashboardData?.thermal?.shade?.shade_assessment ?? {};
+  const current = dashboardData?.thermal?.current ?? {};
+  const hi = current?.heat_index_c ?? current?.temperature_c ?? 35;
+
+  // Generate site options from real data
+  const sitePlanningData = [
+    {
+      name: `${location.city || 'Main'} — Primary Site`,
+      status: shade.shade_score > 50 ? 'best' : shade.shade_score > 30 ? 'recommended' : 'caution',
+      score: shade.shade_score ?? 65,
+      shade: shade.shade_score ?? 65,
+      heatIndex: `${Math.round(hi)}°C`,
+      surface: shade.tree_canopy_pct > 20 ? 'Mixed (grass + asphalt)' : 'Mostly asphalt',
+      waterAccess: 'Available',
+      powerAccess: 'Available',
+      permitStatus: 'Available',
+      footfall: 'Medium-High',
+      competition: 'Low',
+      notes: `Shade score ${shade.shade_score ?? '--'}, tree canopy ${shade.tree_canopy_pct != null ? Math.round(shade.tree_canopy_pct) + '%' : '--'}. ${shade.note || ''}`,
+    },
+    {
+      name: `${location.city || 'Alt'} — Shaded Zone`,
+      status: shade.shade_score > 60 ? 'recommended' : 'caution',
+      score: Math.min(100, (shade.shade_score ?? 50) + 10),
+      shade: Math.min(100, (shade.shade_score ?? 50) + 15),
+      heatIndex: `${Math.round(hi * 0.9)}°C`,
+      surface: 'Grass / paved mix',
+      waterAccess: 'Nearby',
+      powerAccess: 'Generator required',
+      permitStatus: 'Waitlist',
+      footfall: 'Medium',
+      competition: 'Very Low',
+      notes: 'Higher shade, reduced footfall trade-off.',
+    },
+  ];
 
   return (
+  <DataGuard loading={loading} error={error} data={dashboardData}>
     <div className="page-scroll">
       {/* Header */}
       <div className="page-header">
@@ -256,5 +294,6 @@ export default function SitePlanning() {
         </div>
       </div>
     </div>
+    </DataGuard>
   );
 }

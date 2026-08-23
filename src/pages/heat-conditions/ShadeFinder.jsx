@@ -1,5 +1,6 @@
 import { Trees } from 'lucide-react';
-import { shadeFinderData } from '../../data/mockData';
+import { useApp } from '../../context/AppContext';
+import { DataGuard } from '../../components/PageLoader';
 import { MapContainer, TileLayer, Circle, Tooltip as MapTooltip } from 'react-leaflet';
 import L from 'leaflet';
 
@@ -11,128 +12,140 @@ L.Icon.Default.mergeOptions({
 });
 
 export default function ShadeFinder() {
+  const { dashboardData, loading, error, location } = useApp();
+  const shadeRaw = dashboardData?.thermal?.shade;
+  const assessment = shadeRaw?.shade_assessment ?? {};
+  const greenAreas = shadeRaw?.green_areas ?? [];
+
   return (
-    <div className="page-scroll">
-      <div className="page-header">
-        <div className="page-header-row">
-          <div className="page-icon-wrap" style={{ background: 'rgba(34,197,94,0.12)' }}>
-            <Trees size={24} color="var(--status-ok)" />
+    <DataGuard loading={loading} error={error} data={dashboardData}>
+      <div className="page-scroll">
+        <div className="page-header">
+          <div className="page-header-row">
+            <div className="page-icon-wrap" style={{ background: 'rgba(34,197,94,0.12)' }}>
+              <Trees size={24} color="var(--status-ok)" />
+            </div>
+            <div>
+              <h1 className="page-title">Shade Finder</h1>
+              <p className="page-desc">
+                Potential shade areas based on satellite and street-view segmentation. Identify tree canopy, building shade, and lower solar-exposure spots.
+              </p>
+            </div>
           </div>
+          <div className="dependency-trail">
+            <span className="dep-step">Candidate Location</span>
+            <span className="dep-arrow">→</span>
+            <span className="dep-step current">Shade Finder</span>
+            <span className="dep-arrow">→</span>
+            <span className="dep-step">Better Parking Areas</span>
+          </div>
+        </div>
+
+        <div className="metric-grid">
+          <div className="metric-card">
+            <span className="metric-label">Shade Score</span>
+            <span className="metric-value" style={{ color: 'var(--brand-teal)' }}>{assessment.shade_score ?? '--'}</span>
+            <span className="metric-sub">0 = no shade, 100 = full</span>
+          </div>
+          <div className="metric-card">
+            <span className="metric-label">Shade Quality</span>
+            <span className="metric-value" style={{ fontSize: '1rem' }}>{assessment.shade_quality ?? '--'}</span>
+            <span className="metric-sub">Site assessment</span>
+          </div>
+          <div className="metric-card">
+            <span className="metric-label">Tree Canopy</span>
+            <span className="metric-value" style={{ color: 'var(--status-ok)' }}>{assessment.tree_canopy_pct != null ? `${Math.round(assessment.tree_canopy_pct)}%` : '--'}</span>
+            <span className="metric-sub">Vegetation coverage</span>
+          </div>
+          <div className="metric-card">
+            <span className="metric-label">Building Shade</span>
+            <span className="metric-value">{assessment.building_shade_pct != null ? `${Math.round(assessment.building_shade_pct)}%` : '--'}</span>
+            <span className="metric-sub">Structural shade</span>
+          </div>
+        </div>
+
+        <div className="two-col">
+          {/* Shade Details */}
           <div>
-            <h1 className="page-title">Shade Finder</h1>
-            <p className="page-desc">
-              Identify tree canopy, building shade, and lower solar-exposure parking spots near your candidate locations.
-            </p>
-          </div>
-        </div>
-        <div className="dependency-trail">
-          <span className="dep-step">Candidate Location</span>
-          <span className="dep-arrow">→</span>
-          <span className="dep-step current">Shade Finder</span>
-          <span className="dep-arrow">→</span>
-          <span className="dep-step">Better Parking Areas</span>
-        </div>
-      </div>
-
-      <div className="metric-grid">
-        <div className="metric-card">
-          <span className="metric-label">Best Shade Score</span>
-          <span className="metric-value" style={{ color: 'var(--brand-teal)' }}>96</span>
-          <span className="metric-sub">Covered Walkway — Spot D</span>
-        </div>
-        <div className="metric-card">
-          <span className="metric-label">Worst Spot</span>
-          <span className="metric-value" style={{ color: 'var(--status-critical)' }}>12</span>
-          <span className="metric-sub">Open Lot — Spot C</span>
-        </div>
-        <div className="metric-card">
-          <span className="metric-label">Full-Day Shade Spots</span>
-          <span className="metric-value" style={{ color: 'var(--status-ok)' }}>2</span>
-          <span className="metric-sub">Both AM and PM coverage</span>
-        </div>
-        <div className="metric-card">
-          <span className="metric-label">Recommended Spot</span>
-          <span className="metric-value" style={{ fontSize: '1rem' }}>Spot D</span>
-          <span className="metric-sub">10h shade, covered walkway</span>
-        </div>
-      </div>
-
-      <div className="two-col">
-        {/* Shade Cards */}
-        <div>
-          <p className="section-title">Shade Spots</p>
-          <div className="shade-cards" style={{ gridTemplateColumns: '1fr' }}>
-            {shadeFinderData
-              .slice()
-              .sort((a, b) => b.shadeScore - a.shadeScore)
-              .map((spot, i) => (
-                <div
-                  key={spot.name}
-                  className={`shade-card${i === 0 ? ' best-shade' : ''}`}
-                >
-                  <div className="shade-card-name">{spot.name}</div>
-                  <div className="shade-card-meta">Shade hours per day: {spot.shadeHours}h</div>
-                  <div className="shade-score-bar">
-                    <div className="shade-score-fill" style={{ width: `${spot.shadeScore}%` }} />
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div>
-                      <span className={`shade-tag ${spot.morningShade ? 'yes' : 'no'}`}>
-                        {spot.morningShade ? '☀ AM Shade' : '✗ No AM'}
-                      </span>
-                      <span className={`shade-tag ${spot.afternoonShade ? 'yes' : 'no'}`}>
-                        {spot.afternoonShade ? '☀ PM Shade' : '✗ No PM'}
-                      </span>
+            <p className="section-title">Shade Assessment</p>
+            <div className="panel">
+              <div className="panel-body">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {[
+                    { label: 'Shade Score', value: assessment.shade_score, unit: '/100', color: assessment.shade_score > 60 ? 'var(--status-ok)' : assessment.shade_score > 35 ? 'var(--brand-amber)' : 'var(--status-critical)' },
+                    { label: 'Tree Canopy', value: assessment.tree_canopy_pct != null ? Math.round(assessment.tree_canopy_pct) : null, unit: '%', color: 'var(--status-ok)' },
+                    { label: 'Building Shade', value: assessment.building_shade_pct != null ? Math.round(assessment.building_shade_pct) : null, unit: '%', color: 'var(--brand-amber)' },
+                    { label: 'Vegetation Cover', value: assessment.vegetation_cover_pct != null ? Math.round(assessment.vegetation_cover_pct) : null, unit: '%', color: 'var(--brand-teal)' },
+                  ].map(item => (
+                    <div key={item.label}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, fontSize: '0.82rem' }}>
+                        <span style={{ color: 'var(--text-secondary)' }}>{item.label}</span>
+                        <span style={{ color: item.color, fontWeight: 700 }}>{item.value != null ? `${item.value}${item.unit}` : '--'}</span>
+                      </div>
+                      <div className="progress-bar">
+                        <div className="progress-fill" style={{ width: `${item.value ?? 0}%`, background: item.color }} />
+                      </div>
                     </div>
-                    <span style={{
-                      fontFamily: 'Outfit', fontWeight: 800, fontSize: '1.2rem',
-                      color: spot.shadeScore > 80 ? 'var(--brand-teal)' : spot.shadeScore > 50 ? 'var(--brand-amber)' : 'var(--status-critical)'
-                    }}>
-                      {spot.shadeScore}
-                    </span>
-                  </div>
+                  ))}
                 </div>
-              ))}
+                {assessment.note && (
+                  <p style={{ marginTop: 16, fontSize: '0.75rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                    ⚠ {assessment.note}
+                  </p>
+                )}
+                <div style={{ marginTop: 16, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  <span className="tag tag-teal">Source: {shadeRaw?.data_source ?? 'Stub'}</span>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
 
-        {/* Map */}
-        <div>
-          <p className="section-title">Shade Map</p>
-          <div className="map-wrapper" style={{ height: 400 }}>
-            <MapContainer center={[12.9703, 77.7498]} zoom={17} style={{ height: '100%', width: '100%' }}>
-              <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-              {shadeFinderData.map(spot => (
+          {/* Map */}
+          <div>
+            <p className="section-title">Area Map — {location.city || 'Location'}</p>
+            <div className="map-wrapper" style={{ height: 400 }}>
+              <MapContainer center={[location.lat, location.lon]} zoom={15} style={{ height: '100%', width: '100%' }}>
+                <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                {/* Center marker circle */}
                 <Circle
-                  key={spot.name}
-                  center={[spot.lat, spot.lng]}
-                  radius={80}
+                  center={[location.lat, location.lon]}
+                  radius={200}
                   pathOptions={{
-                    color: spot.shadeScore > 80 ? '#2dd4bf' : spot.shadeScore > 50 ? '#f97316' : '#ef4444',
-                    fillColor: spot.shadeScore > 80 ? '#2dd4bf' : spot.shadeScore > 50 ? '#f97316' : '#ef4444',
-                    fillOpacity: 0.4,
-                    weight: 2,
+                    color: assessment.shade_score > 60 ? '#2dd4bf' : assessment.shade_score > 35 ? '#f97316' : '#ef4444',
+                    fillColor: assessment.shade_score > 60 ? '#2dd4bf' : assessment.shade_score > 35 ? '#f97316' : '#ef4444',
+                    fillOpacity: 0.25, weight: 2,
                   }}
                 >
                   <MapTooltip permanent direction="top" offset={[0, -8]}>
                     <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 11 }}>
-                      {spot.name.split('—')[0]} · Score: {spot.shadeScore}
+                      Shade Score: {assessment.shade_score ?? '--'}
                     </span>
                   </MapTooltip>
                 </Circle>
+                {/* Green areas from satellite */}
+                {greenAreas.map((area, i) => (
+                  <Circle key={i}
+                    center={[area.lat ?? location.lat, area.lon ?? location.lon]}
+                    radius={area.radius_m ?? 80}
+                    pathOptions={{ color: '#22c55e', fillColor: '#22c55e', fillOpacity: 0.3, weight: 1 }}
+                  >
+                    <MapTooltip direction="top" offset={[0, -8]}>
+                      <span style={{ fontSize: 11 }}>Green Area</span>
+                    </MapTooltip>
+                  </Circle>
+                ))}
+              </MapContainer>
+            </div>
+            <div style={{ marginTop: 10, fontSize: '0.73rem', color: 'var(--text-muted)', display: 'flex', gap: 14, flexWrap: 'wrap' }}>
+              {[{ c: '#2dd4bf', l: 'High Shade' }, { c: '#f97316', l: 'Moderate' }, { c: '#ef4444', l: 'Low Shade' }, { c: '#22c55e', l: 'Green Areas' }].map(x => (
+                <div key={x.l} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <div style={{ width: 10, height: 10, borderRadius: '50%', background: x.c }} />{x.l}
+                </div>
               ))}
-            </MapContainer>
-          </div>
-          <div style={{ marginTop: 10, fontSize: '0.73rem', color: 'var(--text-muted)', display: 'flex', gap: 14 }}>
-            {[{ c: '#2dd4bf', l: 'High Shade' }, { c: '#f97316', l: 'Moderate' }, { c: '#ef4444', l: 'Low Shade' }].map(x => (
-              <div key={x.l} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                <div style={{ width: 10, height: 10, borderRadius: '50%', background: x.c }} />
-                {x.l}
-              </div>
-            ))}
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </DataGuard>
   );
 }

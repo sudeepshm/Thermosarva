@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import TopBar from './components/TopBar';
+import { AppProvider, useApp, DEFAULT_LOCATION } from './context/AppContext';
 
 // Find a Location
 import LocationPlanner from './pages/find-location/LocationPlanner';
@@ -35,8 +36,9 @@ import FoodSafetyGuard from './pages/safety/FoodSafetyGuard';
 import EnvironmentalRiskCenter from './pages/alerts-risks/EnvironmentalRiskCenter';
 import CriticalConditionAlerts from './pages/alerts-risks/CriticalConditionAlerts';
 
-export default function Dashboard() {
+function DashboardInner() {
   const [collapsed, setCollapsed] = useState(false);
+  const { dashboardData, fetchDashboard } = useApp();
 
   // Restore fixed layout (landing page sets body to overflow:auto)
   useEffect(() => {
@@ -50,11 +52,24 @@ export default function Dashboard() {
     };
   }, []);
 
+  // Fetch data for Austin TX on first load
+  useEffect(() => {
+    fetchDashboard(DEFAULT_LOCATION.lat, DEFAULT_LOCATION.lon);
+  }, [fetchDashboard]);
+
+  // Derive alert count from real API data
+  const alerts = dashboardData?.risk?.alerts;
+  const alertCount = Array.isArray(alerts?.triggered_alerts)
+    ? alerts.triggered_alerts.length
+    : Array.isArray(alerts)
+    ? alerts.filter(a => a.triggered).length
+    : 0;
+
   return (
     <div className="app-shell">
       <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} />
       <div className="main-content">
-        <TopBar alertCount={2} />
+        <TopBar alertCount={alertCount} />
         <Routes>
           {/* Default redirect */}
           <Route index element={<Navigate to="location-planner" replace />} />
@@ -93,5 +108,13 @@ export default function Dashboard() {
         </Routes>
       </div>
     </div>
+  );
+}
+
+export default function Dashboard() {
+  return (
+    <AppProvider>
+      <DashboardInner />
+    </AppProvider>
   );
 }

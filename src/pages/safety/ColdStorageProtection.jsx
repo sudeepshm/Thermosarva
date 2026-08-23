@@ -1,149 +1,124 @@
-import { Refrigerator, Thermometer, Zap } from 'lucide-react';
-import { coldStorageData } from '../../data/mockData';
-import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
-} from 'recharts';
+import { Refrigerator, Thermometer, ShieldCheck } from 'lucide-react';
+import { useApp } from '../../context/AppContext';
+import { DataGuard } from '../../components/PageLoader';
 
-const CustomTooltip = ({ active, payload, label }) => {
-  if (!active || !payload?.length) return null;
-  return (
-    <div className="custom-tooltip">
-      <div className="tt-label">{label}</div>
-      {payload.map((p, i) => (
-        <div key={i} className="tt-row">
-          <div className="tt-dot" style={{ background: p.color }} />
-          {p.name}: {p.value}{p.name === 'Compressor Load' ? '%' : '°C'}
-        </div>
-      ))}
-    </div>
-  );
+const PRESSURE_CONFIG = {
+  NORMAL_EXTERNAL_LOAD:     { color: 'var(--status-ok)',       bg: 'var(--status-ok-dim)',       label: 'Normal Load',         tagClass: 'tag-green' },
+  ELEVATED_COOLING_DEMAND:  { color: 'var(--status-warning)',  bg: 'var(--status-warning-dim)',  label: 'Elevated Demand',     tagClass: 'tag-yellow' },
+  HIGH_THERMAL_PRESSURE:    { color: 'var(--status-critical)', bg: 'var(--status-critical-dim)', label: 'High Pressure',       tagClass: 'tag-red' },
 };
 
 export default function ColdStorageProtection() {
+  const { dashboardData, loading, error } = useApp();
+  const data = dashboardData?.safety?.cold_storage ?? {};
+
+  const pressure     = data.external_thermal_pressure ?? 'NORMAL_EXTERNAL_LOAD';
+  const cfg          = PRESSURE_CONFIG[pressure] ?? PRESSURE_CONFIG.NORMAL_EXTERNAL_LOAD;
+  const externalTemp = data.external_temperature_c;
+  const effectiveTemp= data.effective_temperature_load_c;
+  const ghi          = data.ghi_wm2;
+  const solarLoad    = data.solar_load ?? '--';
+  const duration     = data.operating_duration_hours;
+
   return (
-    <div className="page-scroll">
-      <div className="page-header">
-        <div className="page-header-row">
-          <div className="page-icon-wrap" style={{ background: 'rgba(59,130,246,0.12)' }}>
-            <Refrigerator size={24} color="var(--status-info)" />
-          </div>
-          <div>
-            <h1 className="page-title">Cold Storage Protection</h1>
-            <p className="page-desc">
-              Monitor truck internal temperatures, compressor load, and refrigeration risk across all perishable items.
-            </p>
-          </div>
-        </div>
-        <div className="dependency-trail">
-          <span className="dep-step">External Thermal Conditions</span>
-          <span className="dep-arrow">+</span>
-          <span className="dep-step">Solar Exposure</span>
-          <span className="dep-arrow">→</span>
-          <span className="dep-step current">Cold Storage Protection</span>
-        </div>
-      </div>
-
-      {/* Alert */}
-      <div style={{
-        background: 'rgba(239,68,68,0.08)',
-        border: '1px solid rgba(239,68,68,0.35)',
-        borderRadius: 'var(--radius-lg)',
-        padding: '14px 18px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: 12,
-        marginBottom: 20,
-      }}>
-        <Refrigerator size={20} color="var(--status-critical)" />
-        <div style={{ flex: 1 }}>
-          <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>Compressor at {coldStorageData.compressorLoad}% load</span>
-          <span style={{ color: 'var(--text-muted)', marginLeft: 8, fontSize: '0.8rem' }}>Frozen items at critical risk between 11 AM – 2 PM</span>
-        </div>
-        <span className="tag tag-red"><Zap size={10} /> At Limit</span>
-      </div>
-
-      <div className="metric-grid">
-        <div className="metric-card">
-          <span className="metric-label">Internal Temp</span>
-          <span className="metric-value" style={{ color: 'var(--status-ok)' }}>{coldStorageData.truckTemp}°C</span>
-          <span className="metric-sub">Currently within range</span>
-        </div>
-        <div className="metric-card">
-          <span className="metric-label">External Temp</span>
-          <span className="metric-value" style={{ color: 'var(--status-critical)' }}>{coldStorageData.externalTemp}°C</span>
-          <span className="metric-sub">Ambient outside</span>
-        </div>
-        <div className="metric-card">
-          <span className="metric-label">Differential</span>
-          <span className="metric-value" style={{ color: 'var(--status-warning)' }}>{coldStorageData.differential}°C</span>
-          <span className="metric-sub">Load on compressor</span>
-        </div>
-        <div className="metric-card">
-          <span className="metric-label">Compressor Load</span>
-          <span className="metric-value" style={{ color: 'var(--status-critical)' }}>{coldStorageData.compressorLoad}%</span>
-          <span className="metric-sub">Max recommended: 80%</span>
-        </div>
-      </div>
-
-      <div className="two-col">
-        {/* Temperature Forecast Chart */}
-        <div className="panel">
-          <div className="panel-header">
-            <span className="panel-title"><Thermometer size={14} className="panel-title-icon" /> Temperature & Load Forecast</span>
-          </div>
-          <div className="panel-body">
-            <div className="chart-container">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={coldStorageData.forecast} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
-                  <CartesianGrid stroke="rgba(255,255,255,0.04)" vertical={false} />
-                  <XAxis dataKey="hour" tick={{ fill: 'var(--text-muted)', fontSize: 11 }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fill: 'var(--text-muted)', fontSize: 11 }} axisLine={false} tickLine={false} />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Line type="monotone" dataKey="external" name="External Temp" stroke="#ef4444" strokeWidth={2} dot={false} />
-                  <Line type="monotone" dataKey="internal" name="Internal Temp" stroke="#3b82f6" strokeWidth={2} dot={false} />
-                  <Line type="monotone" dataKey="load" name="Compressor Load" stroke="#f59e0b" strokeWidth={2} dot={false} strokeDasharray="5 3" />
-                </LineChart>
-              </ResponsiveContainer>
+    <DataGuard loading={loading} error={error} data={dashboardData}>
+      <div className="page-scroll">
+        <div className="page-header">
+          <div className="page-header-row">
+            <div className="page-icon-wrap" style={{ background: 'rgba(59,130,246,0.12)' }}>
+              <Refrigerator size={24} color="var(--status-info)" />
+            </div>
+            <div>
+              <h1 className="page-title">Cold Storage Protection</h1>
+              <p className="page-desc">
+                External thermal pressure assessment for cold storage equipment. Based on ambient conditions — not internal sensor data.
+              </p>
             </div>
           </div>
+          <div className="dependency-trail">
+            <span className="dep-step">External Thermal Conditions</span>
+            <span className="dep-arrow">+</span>
+            <span className="dep-step">Solar Exposure</span>
+            <span className="dep-arrow">→</span>
+            <span className="dep-step current">Cold Storage Protection</span>
+          </div>
         </div>
 
-        {/* Item Status */}
+        {/* Status Banner */}
+        <div style={{
+          background: `linear-gradient(90deg, ${cfg.bg}, transparent)`,
+          border: `1px solid ${cfg.color}44`,
+          borderRadius: 'var(--radius-lg)',
+          padding: '16px 20px',
+          display: 'flex', alignItems: 'center', gap: 14,
+          marginBottom: 20,
+        }}>
+          <Refrigerator size={24} color={cfg.color} />
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 700, color: 'var(--text-primary)' }}>
+              External Thermal Pressure: {cfg.label}
+            </div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+              External temp {externalTemp != null ? `${Math.round(externalTemp)}°C` : '--'} · Solar Load: {solarLoad}
+            </div>
+          </div>
+          <span className={`tag ${cfg.tagClass}`}>{cfg.label}</span>
+        </div>
+
+        <div className="metric-grid">
+          <div className="metric-card">
+            <span className="metric-label">External Temp</span>
+            <span className="metric-value" style={{ color: 'var(--status-critical)' }}>{externalTemp != null ? `${Math.round(externalTemp)}°C` : '--'}</span>
+            <span className="metric-sub">Ambient outside</span>
+          </div>
+          <div className="metric-card">
+            <span className="metric-label">Effective Load Temp</span>
+            <span className="metric-value" style={{ color: cfg.color }}>{effectiveTemp != null ? `${effectiveTemp}°C` : '--'}</span>
+            <span className="metric-sub">With shade adjustment</span>
+          </div>
+          <div className="metric-card">
+            <span className="metric-label">Solar Irradiance</span>
+            <span className="metric-value">{ghi != null ? `${Math.round(ghi)} W/m²` : '--'}</span>
+            <span className="metric-sub">Global horizontal</span>
+          </div>
+          <div className="metric-card">
+            <span className="metric-label">Operating Duration</span>
+            <span className="metric-value">{duration != null ? `${duration}h` : '--'}</span>
+            <span className="metric-sub">Planned session</span>
+          </div>
+        </div>
+
+        {/* Disclaimer + Recommendations */}
         <div className="panel">
           <div className="panel-header">
-            <span className="panel-title">Item Storage Status</span>
+            <span className="panel-title"><ShieldCheck size={14} className="panel-title-icon" /> Assessment Details</span>
           </div>
           <div className="panel-body">
-            {coldStorageData.items.map(item => (
-              <div key={item.name} className={`storage-item-row`}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 'var(--radius-md)', background: 'var(--bg-elevated)', border: `1px solid ${cfg.color}33` }}>
+                <div style={{ width: 8, height: 8, borderRadius: '50%', background: cfg.color, flexShrink: 0 }} />
                 <div>
-                  <div className="storage-item-name">{item.name}</div>
-                  <div className="storage-item-req">{item.tempRequired}</div>
+                  <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>Pressure Category</div>
+                  <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>{pressure.replace(/_/g, ' ')}</div>
                 </div>
-                <span style={{
-                  fontSize: '0.78rem', color: 'var(--text-muted)'
-                }}>
-                  {item.currentRisk} Risk
-                </span>
-                <span className={`tag tag-${item.status === 'critical' ? 'red' : item.status === 'warning' ? 'yellow' : 'green'}`}>
-                  {item.status === 'critical' ? '⚠ Critical' : item.status === 'warning' ? '! Caution' : '✓ OK'}
-                </span>
+                <span className={`tag ${cfg.tagClass}`} style={{ marginLeft: 'auto' }}>{cfg.label}</span>
               </div>
-            ))}
-
-            <div className="divider" />
-            <p className="section-title">High-Risk Hours</p>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              {coldStorageData.riskHours.map(h => (
-                <span key={h} className="tag tag-red">{h}</span>
-              ))}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 'var(--radius-md)', background: 'var(--bg-elevated)' }}>
+                <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--brand-amber)', flexShrink: 0 }} />
+                <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>Solar Load Classification: {solarLoad}</div>
+              </div>
             </div>
-            <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 10 }}>
-              Consider relocating to shade or pre-cooling stock before these windows.
-            </p>
+            {data.disclaimer && (
+              <p style={{ marginTop: 16, fontSize: '0.74rem', color: 'var(--text-muted)', fontStyle: 'italic', lineHeight: 1.6 }}>
+                ⚠ {data.disclaimer}
+              </p>
+            )}
+            <div style={{ marginTop: 12 }}>
+              <span className="tag tag-teal">Source: {data.data_source ?? 'Stub'}</span>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </DataGuard>
   );
 }

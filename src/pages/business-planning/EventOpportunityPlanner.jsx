@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { CalendarDays, MapPin, Users, Thermometer, Wind, Trees, TrendingUp } from 'lucide-react';
-import { eventOpportunityData } from '../../data/mockData';
+import { useApp } from '../../context/AppContext';
+import { DataGuard } from '../../components/PageLoader';
 
 const FORECAST_CONFIG = {
   good:    { color: 'var(--status-ok)',       bg: 'rgba(34,197,94,0.12)',  border: 'rgba(34,197,94,0.3)',  label: 'Good Conditions' },
@@ -17,225 +18,200 @@ const OPP_COLORS = {
 
 export default function EventOpportunityPlanner() {
   const [selected, setSelected] = useState(null);
+  const { dashboardData, loading, error, location } = useApp();
+  const current = dashboardData?.thermal?.current ?? {};
+  const hi = current?.heat_index_c ?? current?.temperature_c ?? 32;
+
+  const eventOpportunityData = [
+    {
+      id: 1,
+      name: `${location.city || 'Downtown'} Weekend Food & Music Fest`,
+      date: 'This Saturday',
+      time: '11:00 AM – 9:00 PM',
+      location: `${location.city || 'Central'} Plaza Grounds`,
+      type: 'Festival',
+      footfall: '8,000 – 12,000',
+      opportunity: 'Very High',
+      thermalForecast: hi > 40 ? 'avoid' : hi > 34 ? 'caution' : 'good',
+      heatIndex: Math.round(hi),
+      aqi: current?.aqi ? `${current.aqi} AQI` : 'Moderate',
+      shadeAvailable: 'Partial (Tents & Trees)',
+      revenue: '$2,800 – $4,200',
+      notes: 'Peak footfall expected between 12 PM - 3 PM and 6 PM - 8 PM. Plan cold beverage stock and cooling breaks for staff.',
+    },
+    {
+      id: 2,
+      name: `${location.city || 'Metro'} Community Farmers Market`,
+      date: 'Sunday Morning',
+      time: '7:30 AM – 1:00 PM',
+      location: `${location.city || 'North'} Pavilion`,
+      type: 'Market',
+      footfall: '3,500 – 5,000',
+      opportunity: 'High',
+      thermalForecast: 'good',
+      heatIndex: Math.max(22, Math.round(hi * 0.8)),
+      aqi: 'Good',
+      shadeAvailable: 'High (Covered Pavilion)',
+      revenue: '$1,400 – $2,200',
+      notes: 'Morning hours avoid peak heat index window. High conversion rate for breakfast, coffee, and grab-and-go items.',
+    },
+    {
+      id: 3,
+      name: `${location.city || 'Tech'} District Night Bazaar`,
+      date: 'Next Friday',
+      time: '6:00 PM – 11:00 PM',
+      location: `${location.city || 'Innovation'} Way`,
+      type: 'Evening Market',
+      footfall: '5,000 – 7,500',
+      opportunity: 'High',
+      thermalForecast: 'good',
+      heatIndex: Math.max(24, Math.round(hi * 0.85)),
+      aqi: 'Moderate',
+      shadeAvailable: 'N/A (Night Event)',
+      revenue: '$2,000 – $3,100',
+      notes: 'Optimal thermal timing after sunset. High evening diner demand. Standard operations recommended.',
+    },
+  ];
+
+  const goodCount = eventOpportunityData.filter(e => e.thermalForecast === 'good').length;
+  const cautionCount = eventOpportunityData.filter(e => e.thermalForecast === 'caution').length;
 
   return (
-    <div className="page-scroll">
-      {/* Header */}
-      <div className="page-header">
-        <div className="page-header-row">
-          <div className="page-icon-wrap" style={{ background: 'rgba(249,115,22,0.12)' }}>
-            <CalendarDays size={24} color="var(--brand-primary)" />
+    <DataGuard loading={loading} error={error} data={dashboardData}>
+      <div className="page-scroll">
+        {/* Header */}
+        <div className="page-header">
+          <div className="page-header-row">
+            <div className="page-icon-wrap" style={{ background: 'rgba(249,115,22,0.12)' }}>
+              <CalendarDays size={24} color="var(--brand-primary)" />
+            </div>
+            <div>
+              <h1 className="page-title">Event Opportunity Planner</h1>
+              <p className="page-desc">
+                Discover upcoming local events in {location.city || 'your area'} and evaluate each one against thermal conditions, footfall, and revenue potential before committing.
+              </p>
+            </div>
           </div>
+          <div className="dependency-trail">
+            <span className="dep-step">Thermal Forecast</span>
+            <span className="dep-arrow">+</span>
+            <span className="dep-step">Event Data</span>
+            <span className="dep-arrow">→</span>
+            <span className="dep-step current">Event Opportunity Planner</span>
+          </div>
+        </div>
+
+        {/* Summary metrics */}
+        <div className="metric-grid">
+          <div className="metric-card">
+            <span className="metric-label">Upcoming Events</span>
+            <span className="metric-value">{eventOpportunityData.length}</span>
+            <span className="metric-sub">In {location.city || 'active area'}</span>
+          </div>
+          <div className="metric-card">
+            <span className="metric-label">Favorable</span>
+            <span className="metric-value" style={{ color: 'var(--status-ok)' }}>{goodCount}</span>
+            <span className="metric-sub">Good thermal conditions</span>
+          </div>
+          <div className="metric-card">
+            <span className="metric-label">Caution</span>
+            <span className="metric-value" style={{ color: 'var(--status-warning)' }}>{cautionCount}</span>
+            <span className="metric-sub">Manage timing carefully</span>
+          </div>
+          <div className="metric-card">
+            <span className="metric-label">Current Heat Index</span>
+            <span className="metric-value" style={{ fontSize: '1.2rem', color: hi > 38 ? 'var(--status-critical)' : 'var(--status-warning)' }}>
+              {Math.round(hi)}°C
+            </span>
+            <span className="metric-sub">Reference baseline</span>
+          </div>
+        </div>
+
+        {/* Two col layout */}
+        <div className="two-col">
+          {/* Events List */}
           <div>
-            <h1 className="page-title">Event Opportunity Planner</h1>
-            <p className="page-desc">
-              Discover upcoming local events and evaluate each one against thermal conditions, footfall, and revenue potential before committing.
-            </p>
-          </div>
-        </div>
-        <div className="dependency-trail">
-          <span className="dep-step">Thermal Forecast</span>
-          <span className="dep-arrow">+</span>
-          <span className="dep-step">Event Data</span>
-          <span className="dep-arrow">→</span>
-          <span className="dep-step current">Event Opportunity Planner</span>
-        </div>
-      </div>
-
-      {/* Summary metrics */}
-      <div className="metric-grid">
-        <div className="metric-card">
-          <span className="metric-label">Upcoming Events</span>
-          <span className="metric-value">{eventOpportunityData.length}</span>
-          <span className="metric-sub">Next 30 days</span>
-        </div>
-        <div className="metric-card">
-          <span className="metric-label">Recommended</span>
-          <span className="metric-value" style={{ color: 'var(--status-ok)' }}>2</span>
-          <span className="metric-sub">Good thermal conditions</span>
-        </div>
-        <div className="metric-card">
-          <span className="metric-label">Caution</span>
-          <span className="metric-value" style={{ color: 'var(--status-warning)' }}>1</span>
-          <span className="metric-sub">Manage timing carefully</span>
-        </div>
-        <div className="metric-card">
-          <span className="metric-label">Avoid / High Risk</span>
-          <span className="metric-value" style={{ color: 'var(--status-critical)' }}>1</span>
-          <span className="metric-sub">Peak heat during event</span>
-        </div>
-      </div>
-
-      <div className="two-col">
-        {/* Left: Events list */}
-        <div>
-          <p className="section-title">Upcoming Events</p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {eventOpportunityData.map(evt => {
-              const forecast = FORECAST_CONFIG[evt.thermalForecast];
-              const isSelected = selected?.id === evt.id;
-              return (
-                <div
-                  key={evt.id}
-                  onClick={() => setSelected(isSelected ? null : evt)}
-                  style={{
-                    background: isSelected ? 'var(--bg-card-hover)' : 'var(--bg-card)',
-                    border: `1px solid ${isSelected ? 'var(--border-brand)' : 'var(--border-subtle)'}`,
-                    borderRadius: 'var(--radius-lg)',
-                    padding: '16px 18px',
-                    cursor: 'pointer',
-                    transition: 'all var(--transition-base)',
-                  }}
-                >
-                  {/* Top row */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)', marginBottom: 2 }}>{evt.name}</div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', gap: 12 }}>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><CalendarDays size={11} /> {evt.date}</span>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><MapPin size={11} /> {evt.location}</span>
+            <p className="section-title">Opportunity Events</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {eventOpportunityData.map(ev => {
+                const fCfg = FORECAST_CONFIG[ev.thermalForecast];
+                const isSelected = selected?.id === ev.id;
+                return (
+                  <div
+                    key={ev.id}
+                    onClick={() => setSelected(ev)}
+                    style={{
+                      background: isSelected ? 'var(--bg-elevated)' : 'var(--bg-card)',
+                      border: `1px solid ${isSelected ? 'var(--brand-primary)' : 'var(--border-subtle)'}`,
+                      borderRadius: 'var(--radius-lg)',
+                      padding: '16px 18px',
+                      cursor: 'pointer',
+                      transition: 'all var(--transition-fast)',
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+                      <div>
+                        <div style={{ fontFamily: 'Outfit', fontWeight: 700, fontSize: '1rem', color: 'var(--text-primary)', marginBottom: 2 }}>{ev.name}</div>
+                        <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <MapPin size={12} /> {ev.location} · {ev.date}
+                        </div>
                       </div>
+                      <span className="tag" style={{ background: fCfg.bg, color: fCfg.color, border: `1px solid ${fCfg.border}`, fontSize: '0.72rem' }}>
+                        {fCfg.label}
+                      </span>
                     </div>
-                    <span style={{
-                      padding: '4px 10px',
-                      borderRadius: 99,
-                      background: forecast.bg,
-                      border: `1px solid ${forecast.border}`,
-                      color: forecast.color,
-                      fontSize: '0.7rem',
-                      fontWeight: 700,
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.06em',
-                      flexShrink: 0,
-                    }}>
-                      {forecast.label}
-                    </span>
-                  </div>
 
-                  {/* Stats row */}
-                  <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: '0.78rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: 'var(--text-muted)' }}>
-                      <Users size={12} />
-                      <span>{evt.expectedFootfall.toLocaleString()} footfall</span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: 'var(--text-muted)' }}>
-                      <Thermometer size={12} />
-                      <span>{evt.heatIndex}°C heat index</span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: 'var(--text-muted)' }}>
-                      <Wind size={12} />
-                      <span>AQI {evt.aqi}</span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: 'var(--text-muted)' }}>
-                      <Trees size={12} />
-                      <span>Shade: {evt.shadeAvailable}</span>
+                    <div style={{ display: 'flex', gap: 12, fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--border-subtle)' }}>
+                      <span><Users size={12} style={{ display: 'inline', marginRight: 4 }} /> {ev.footfall}</span>
+                      <span><Thermometer size={12} style={{ display: 'inline', marginRight: 4 }} /> {ev.heatIndex}°C</span>
+                      <span style={{ marginLeft: 'auto', fontWeight: 700, color: OPP_COLORS[ev.opportunity] }}>{ev.opportunity} Potential</span>
                     </div>
                   </div>
+                );
+              })}
+            </div>
+          </div>
 
-                  {/* Revenue + opportunity */}
-                  <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <div style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-                      Est. Revenue: <span style={{ color: 'var(--brand-amber)' }}>{evt.revenue}</span>
+          {/* Details */}
+          <div>
+            <p className="section-title">Event Thermal Analysis</p>
+            {selected ? (
+              <div className="panel">
+                <div className="panel-header">
+                  <span className="panel-title">{selected.name}</span>
+                </div>
+                <div className="panel-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                  <div className="two-col" style={{ gap: 10 }}>
+                    <div style={{ background: 'var(--bg-elevated)', borderRadius: 'var(--radius-md)', padding: '12px 14px' }}>
+                      <div style={{ fontSize: '0.68rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Time Window</div>
+                      <div style={{ fontFamily: 'Outfit', fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)', marginTop: 4 }}>{selected.time}</div>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: '0.78rem' }}>
-                      <TrendingUp size={12} color={OPP_COLORS[evt.opportunity]} />
-                      <span style={{ color: OPP_COLORS[evt.opportunity], fontWeight: 600 }}>{evt.opportunity} Opportunity</span>
+                    <div style={{ background: 'var(--bg-elevated)', borderRadius: 'var(--radius-md)', padding: '12px 14px' }}>
+                      <div style={{ fontSize: '0.68rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Forecast Heat Index</div>
+                      <div style={{ fontFamily: 'Outfit', fontWeight: 700, fontSize: '0.95rem', color: FORECAST_CONFIG[selected.thermalForecast].color, marginTop: 4 }}>{selected.heatIndex}°C</div>
                     </div>
+                  </div>
+
+                  <div style={{ background: 'var(--bg-elevated)', borderRadius: 'var(--radius-md)', padding: '14px 16px' }}>
+                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 4 }}>Estimated Revenue</div>
+                    <div style={{ fontFamily: 'Outfit', fontWeight: 800, fontSize: '1.3rem', color: 'var(--brand-amber)' }}>{selected.revenue}</div>
+                  </div>
+
+                  <div style={{ background: 'var(--bg-elevated)', borderRadius: 'var(--radius-md)', padding: '12px 14px', fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 6 }}>Operational Guidance</div>
+                    {selected.notes}
                   </div>
                 </div>
-              );
-            })}
+              </div>
+            ) : (
+              <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-lg)', padding: '40px 24px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                <CalendarDays size={32} style={{ margin: '0 auto 12px', opacity: 0.4 }} />
+                <p>Select an event to view full thermal and revenue details.</p>
+              </div>
+            )}
           </div>
         </div>
-
-        {/* Right: Detail panel */}
-        <div>
-          <p className="section-title">Event Detail</p>
-          {selected ? (
-            <div className="panel" style={{ position: 'sticky', top: 0 }}>
-              <div className="panel-header">
-                <span className="panel-title">
-                  <CalendarDays size={14} className="panel-title-icon" />
-                  {selected.name}
-                </span>
-                <span className="tag tag-orange">{selected.type}</span>
-              </div>
-              <div className="panel-body" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                {/* Time + Location */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  <div style={{ display: 'flex', gap: 8, fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
-                    <CalendarDays size={14} style={{ flexShrink: 0, marginTop: 2 }} />
-                    <span>{selected.date} · {selected.time}</span>
-                  </div>
-                  <div style={{ display: 'flex', gap: 8, fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
-                    <MapPin size={14} style={{ flexShrink: 0, marginTop: 2 }} />
-                    <span>{selected.location}</span>
-                  </div>
-                </div>
-
-                {/* Key metrics */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                  {[
-                    { label: 'Expected Footfall', value: selected.expectedFootfall.toLocaleString(), unit: 'people' },
-                    { label: 'Heat Index',         value: `${selected.heatIndex}°C`, unit: '' },
-                    { label: 'AQI Level',          value: selected.aqi, unit: '' },
-                    { label: 'Shade Available',    value: selected.shadeAvailable, unit: '' },
-                  ].map(m => (
-                    <div key={m.label} style={{
-                      background: 'var(--bg-elevated)',
-                      borderRadius: 'var(--radius-md)',
-                      padding: '12px 14px',
-                    }}>
-                      <div style={{ fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 4 }}>{m.label}</div>
-                      <div style={{ fontFamily: 'Outfit', fontWeight: 800, fontSize: '1.1rem', color: 'var(--text-primary)' }}>{m.value}</div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Revenue */}
-                <div style={{
-                  background: 'rgba(249,115,22,0.08)',
-                  border: '1px solid rgba(249,115,22,0.25)',
-                  borderRadius: 'var(--radius-md)',
-                  padding: '14px 16px',
-                }}>
-                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>Estimated Revenue</div>
-                  <div style={{ fontFamily: 'Outfit', fontWeight: 800, fontSize: '1.3rem', color: 'var(--brand-amber)' }}>{selected.revenue}</div>
-                </div>
-
-                {/* Notes */}
-                <div style={{
-                  background: 'var(--bg-elevated)',
-                  borderRadius: 'var(--radius-md)',
-                  padding: '12px 14px',
-                  fontSize: '0.8rem',
-                  color: 'var(--text-secondary)',
-                  lineHeight: 1.6,
-                }}>
-                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Operational Notes</div>
-                  {selected.notes}
-                </div>
-
-                <button className="layer-btn" style={{ width: '100%', justifyContent: 'center', padding: '12px', borderRadius: 'var(--radius-md)', fontWeight: 700, background: 'var(--brand-primary-dim)', border: '1px solid var(--border-brand)', color: 'var(--brand-primary)' }}>
-                  Mark as Target Event
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div style={{
-              background: 'var(--bg-card)',
-              border: '1px solid var(--border-subtle)',
-              borderRadius: 'var(--radius-lg)',
-              padding: '40px 24px',
-              textAlign: 'center',
-              color: 'var(--text-muted)',
-            }}>
-              <CalendarDays size={32} style={{ margin: '0 auto 12px', opacity: 0.4 }} />
-              <p>Select an event to view full details and operational guidance.</p>
-            </div>
-          )}
-        </div>
       </div>
-    </div>
+    </DataGuard>
   );
 }

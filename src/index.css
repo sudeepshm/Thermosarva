@@ -121,9 +121,42 @@ a { color: var(--text-brand); text-decoration: none; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 99px; }
 
+/* ── Animations ── */
+@keyframes spin { to { transform: rotate(360deg); } }
+.spin { animation: spin 0.8s linear infinite; }
+
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg,
+    rgba(255,255,255,0.04) 25%,
+    rgba(255,255,255,0.08) 50%,
+    rgba(255,255,255,0.04) 75%
+  );
+  background-size: 800px 100%;
+  animation: shimmer 1.4s infinite;
+  border-radius: var(--radius-md);
+}
+
+/* Loading overlay for pages */
+.page-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  height: 100%;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+.page-loading svg { color: var(--brand-primary); }
+
 /* ══════════════════════════════════════════════
    LAYOUT
    ══════════════════════════════════════════════ */
+
 
 .app-shell {
   display: flex;
