@@ -30,7 +30,7 @@ function ScoreRing({ score, color }) {
 }
 
 export default function LocationPlanner() {
-  const { dashboardData, loading, error, location } = useApp();
+  const { dashboardData, loading, error, location, fetchDashboard } = useApp();
   const navigate = useNavigate();
 
   const plan = dashboardData?.location_context?.plan ?? {};
@@ -43,7 +43,12 @@ export default function LocationPlanner() {
   const statusColor = score >= 70 ? '#22c55e' : score >= 50 ? '#f59e0b' : '#ef4444';
 
   return (
-    <DataGuard loading={loading} error={error} data={dashboardData}>
+    <DataGuard
+      loading={loading}
+      error={error}
+      data={dashboardData}
+      onRetry={() => fetchDashboard(location.lat, location.lon)}
+    >
       <div className="page-scroll">
         {/* Header */}
         <div className="page-header">

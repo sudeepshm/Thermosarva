@@ -49,7 +49,7 @@ class Settings(BaseSettings):
 
     # ── Geographic Services ───────────────────────────────────────────────────
     nominatim_base_url: str = "https://nominatim.openstreetmap.org"
-    nominatim_user_agent: str = "thermosarva/1.0"
+    nominatim_user_agent: str = "ThermosarvaApp/1.0 (https://thermosarva.org; contact@thermosarva.org)"
     overpass_base_url: str = "https://overpass-api.de/api"
 
     # ── Weather ───────────────────────────────────────────────────────────────
