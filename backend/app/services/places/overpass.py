@@ -126,7 +126,6 @@ out body center 50;
         urls = [
             f"{self.base_url}/interpreter",
             "https://overpass.kumi.systems/api/interpreter",
-            "https://lz4.overpass-api.de/api/interpreter",
         ]
 
         headers = {
@@ -137,7 +136,7 @@ out body center 50;
         data = None
         for url in urls:
             try:
-                async with httpx.AsyncClient(timeout=2.5) as client:
+                async with httpx.AsyncClient(timeout=1.5) as client:
                     response = await client.post(
                         url,
                         data={"data": query},
@@ -151,7 +150,7 @@ out body center 50;
                 continue
 
         if not data or not data.get("elements"):
-            # Fallback realistic geographic POIs for the coordinates if upstream public mirrors are throttled
+            # Instant fallback realistic geographic POIs for the coordinates
             return _generate_fallback_pois(lat, lon, radius_m, categories)
 
         elements = data.get("elements", [])

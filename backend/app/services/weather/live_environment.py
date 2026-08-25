@@ -270,7 +270,7 @@ async def fetch_live_satellite_segmentation(lat: float, lon: float) -> Dict[str,
     green_areas: List[Dict[str, Any]] = []
 
     try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
+        async with httpx.AsyncClient(timeout=1.5) as client:
             resp = await client.post("https://overpass-api.de/api/interpreter", data={"data": query})
             if resp.status_code == 200:
                 elements = resp.json().get("elements", [])
@@ -292,7 +292,7 @@ async def fetch_live_satellite_segmentation(lat: float, lon: float) -> Dict[str,
                     elif "building" in tags:
                         building_count += 1
     except Exception as exc:
-        logger.warning("overpass_segmentation_fallback", error=str(exc))
+        logger.debug("overpass_segmentation_fallback", error=str(exc))
 
     total = max(1, green_count + building_count)
     veg_pct = min(90.0, max(5.0, round((green_count / total) * 100, 1)))

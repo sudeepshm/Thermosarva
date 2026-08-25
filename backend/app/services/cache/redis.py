@@ -8,6 +8,7 @@ Cache flow:
 When REDIS_FALLBACK_MEMORY=true (default), an in-memory dict is used
 so the app runs without a Redis instance during local development.
 """
+import asyncio
 import json
 from typing import Any, Dict, Optional
 
@@ -22,6 +23,7 @@ _memory_cache: Dict[str, Any] = {}
 # ── Redis client (lazy init) ──────────────────────────────────────────────────
 _redis_client = None
 _redis_available: Optional[bool] = None
+_redis_lock = asyncio.Lock()
 
 
 async def _get_redis():
@@ -30,25 +32,31 @@ async def _get_redis():
         return None
     if _redis_client is not None:
         return _redis_client
-    settings = get_settings()
-    try:
-        import redis.asyncio as aioredis
-        _redis_client = await aioredis.from_url(
-            settings.redis_url,
-            encoding="utf-8",
-            decode_responses=True,
-            socket_connect_timeout=0.3,
-            socket_timeout=0.3,
-        )
-        await _redis_client.ping()
-        _redis_available = True
-        logger.info("redis_connected", url=settings.redis_url)
-        return _redis_client
-    except Exception as exc:
-        logger.warning("redis_unavailable", error=str(exc), fallback="memory")
-        _redis_client = None
-        _redis_available = False
-        return None
+    async with _redis_lock:
+        if _redis_available is False:
+            return None
+        if _redis_client is not None:
+            return _redis_client
+        settings = get_settings()
+        try:
+            import redis.asyncio as aioredis
+            client = await aioredis.from_url(
+                settings.redis_url,
+                encoding="utf-8",
+                decode_responses=True,
+                socket_connect_timeout=0.2,
+                socket_timeout=0.2,
+            )
+            await client.ping()
+            _redis_client = client
+            _redis_available = True
+            logger.info("redis_connected", url=settings.redis_url)
+            return _redis_client
+        except Exception as exc:
+            logger.warning("redis_unavailable", error=str(exc), fallback="memory")
+            _redis_client = None
+            _redis_available = False
+            return None
 
 
 # ── Cache Key Builders ────────────────────────────────────────────────────────

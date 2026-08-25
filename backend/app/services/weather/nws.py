@@ -30,15 +30,16 @@ class NWSClient:
         Returns a list of normalized alert dicts.
         """
         url = f"{self.base_url}/alerts/active"
-        params = {"point": f"{lat},{lon}", "status": "actual", "limit": 20}
+        # NWS expects clean 4-decimal precision coordinates
+        params = {"point": f"{lat:.4f},{lon:.4f}", "status": "actual", "limit": 20}
         try:
-            async with httpx.AsyncClient(timeout=15.0) as client:
+            async with httpx.AsyncClient(timeout=4.0) as client:
                 response = await client.get(url, params=params, headers=self.headers)
                 response.raise_for_status()
                 data = response.json()
-        except httpx.HTTPError as exc:
-            logger.warning("nws_error", error=str(exc))
-            raise WeatherServiceError(str(exc)) from exc
+        except Exception as exc:
+            logger.warning("nws_alerts_unavailable", error=str(exc))
+            return []
 
         features = data.get("features", [])
         alerts = []
@@ -50,7 +51,7 @@ class NWSClient:
                 "severity": props.get("severity", ""),
                 "urgency": props.get("urgency", ""),
                 "headline": props.get("headline", ""),
-                "description": props.get("description", "")[:500],
+                "description": (props.get("description") or "")[:500],
                 "onset": props.get("onset", ""),
                 "expires": props.get("expires", ""),
                 "source": "noaa_nws",
