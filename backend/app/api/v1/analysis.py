@@ -19,7 +19,7 @@ Partial failures are handled gracefully:
 import asyncio
 from typing import Any, Dict, List
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 
 from app.core.logging import get_logger
 from app.engines import location_engine, operation_engine, risk_engine, safety_engine, thermal_engine
@@ -89,6 +89,9 @@ async def get_dashboard(body: DashboardRequest):
             src = r.get("__source__")
             if src and src not in unavailable_sources:
                 unavailable_sources.append(src)
+
+    if isinstance(env_params, dict) and env_params.get("__error__"):
+        raise HTTPException(status_code=502, detail=env_params.get("message") or "FortyGuard data is unavailable.")
 
     # Step 3: Build safety assessment from fetched env params
     crew_safety = {}

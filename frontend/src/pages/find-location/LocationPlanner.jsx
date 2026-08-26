@@ -47,7 +47,7 @@ export default function LocationPlanner() {
       loading={loading}
       error={error}
       data={dashboardData}
-      onRetry={() => fetchDashboard(location.lat, location.lon)}
+      onRetry={Number.isFinite(location.lat) && Number.isFinite(location.lon) ? () => fetchDashboard(location.lat, location.lon) : undefined}
     >
       <div className="page-scroll">
         {/* Header */}

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import TopBar from './components/TopBar';
-import { AppProvider, useApp, DEFAULT_LOCATION } from './context/AppContext';
+import { AppProvider, useApp } from './context/AppContext';
 
 // Find a Location
 import LocationPlanner from './pages/find-location/LocationPlanner';
@@ -38,7 +38,7 @@ import CriticalConditionAlerts from './pages/alerts-risks/CriticalConditionAlert
 
 function DashboardInner() {
   const [collapsed, setCollapsed] = useState(false);
-  const { dashboardData, fetchDashboard } = useApp();
+  const { dashboardData } = useApp();
 
   // Restore fixed layout (landing page sets body to overflow:auto)
   useEffect(() => {
@@ -51,11 +51,6 @@ function DashboardInner() {
       document.body.style.width    = '';
     };
   }, []);
-
-  // Fetch data for Austin TX on first load
-  useEffect(() => {
-    fetchDashboard(DEFAULT_LOCATION.lat, DEFAULT_LOCATION.lon);
-  }, [fetchDashboard]);
 
   // Derive alert count from real API data
   const alerts = dashboardData?.risk?.alerts;

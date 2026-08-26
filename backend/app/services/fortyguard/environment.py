@@ -20,12 +20,16 @@ async def get_environmental_parameters(
     """Request current environmental parameters for a U.S. location."""
     client = get_fortyguard_client()
     return await client.request(
-        "environment/parameters",
+        "env_params",
         {
             "latitude": location.latitude,
             "longitude": location.longitude,
-            "date": date,
-            "time": time,
+            "temperature": 32.5,
+            "date_time": {
+                "start_date": date,
+                "start_time": time,
+                "filter_type": 1,
+            },
         },
     )
 
@@ -37,14 +41,20 @@ async def get_forecast(
     hours: int = 12,
 ) -> Dict[str, Any]:
     """Request a multi-hour environmental forecast for a U.S. location."""
+    end_hour = (int(start_time.split(":", 1)[0]) + max(1, min(hours, 23))) % 24
     client = get_fortyguard_client()
     return await client.request(
-        "environment/forecast",
+        "env_params",
         {
             "latitude": location.latitude,
             "longitude": location.longitude,
-            "date": date,
-            "time": start_time,
+            "temperature": 32.5,
+            "date_time": {
+                "start_date": date,
+                "start_time": start_time,
+                "end_time": f"{end_hour:02d}:{start_time.split(':', 1)[1]}",
+                "filter_type": 2,
+            },
             "hours": hours,
         },
     )

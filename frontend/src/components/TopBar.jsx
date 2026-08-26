@@ -54,7 +54,7 @@ export default function TopBar({ alertCount = 0 }) {
     ?? dashboardData?.thermal?.current?.heat_index
     ?? null;
 
-  const locationLabel = location.city
+  const locationLabel = location?.city
     ? `${location.city}${location.state ? ', ' + location.state : ''}`
     : null;
 

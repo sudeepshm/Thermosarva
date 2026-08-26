@@ -12,5 +12,7 @@ services:
         value: production
       - key: FORTYGUARD_STUB_MODE
         value: "false"
+      - key: FORTYGUARD_API_KEY
+        sync: false
       - key: REDIS_FALLBACK_MEMORY
         value: "true"

@@ -13,6 +13,7 @@ from app.services.fortyguard.client import get_fortyguard_client
 async def get_satellite_segmentation(
     location: ResolvedLocation,
     date: str,
+    time: str = "12:00",
 ) -> Dict[str, Any]:
     """
     Request satellite segmentation data for a U.S. location.
@@ -21,11 +22,17 @@ async def get_satellite_segmentation(
     """
     client = get_fortyguard_client()
     return await client.request(
-        "satellite/segmentation",
+        "satellite",
         {
-            "latitude": location.latitude,
-            "longitude": location.longitude,
-            "date": date,
-            "radius_m": 800,
+            "sat": {
+                "latitude": location.latitude,
+                "longitude": location.longitude,
+            },
+            "date_time": {
+                "start_date": date,
+                "start_time": time,
+                "filter_type": 1,
+            },
+            "granularity": 80,
         },
     )

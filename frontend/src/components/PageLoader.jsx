@@ -49,5 +49,6 @@ export function PageError({ message, onRetry }) {
 export function DataGuard({ loading, error, data, children, message, onRetry }) {
   if (loading && !data) return <PageLoader message={message} />;
   if (error && !data)   return <PageError message={error} onRetry={onRetry} />;
+  if (!data) return <PageError message="Search for a U.S. city or address to load FortyGuard data." />;
   return children;
 }

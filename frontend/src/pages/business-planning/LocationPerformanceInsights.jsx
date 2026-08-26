@@ -11,7 +11,7 @@ export default function LocationPerformanceInsights() {
   const current = dashboardData?.thermal?.current ?? {};
   const hi = current?.heat_index_c ?? current?.temperature_c ?? 34;
 
-  const cityName = location.city || 'Austin';
+  const cityName = location.city || 'Selected Location';
 
   const weekly = [
     { day: 'Mon', mainSite: 72, shadedHub: 68, streetFront: 60 },

@@ -21,11 +21,12 @@ async def get_streetview_segmentation(
     """
     client = get_fortyguard_client()
     return await client.request(
-        "streetview/segmentation",
+        "streetview",
         {
             "latitude": location.latitude,
             "longitude": location.longitude,
-            "date": date,
-            "time": time,
+            "vertical_angle": 10.0,
+            "horizontal_angle": 90.0,
+            "back_view": False,
         },
     )
